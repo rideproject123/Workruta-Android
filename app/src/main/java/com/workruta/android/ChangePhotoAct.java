@@ -32,9 +32,11 @@ import android.widget.TextView;
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.workruta.android.Interface.OnGalleryLoaded;
 import com.workruta.android.Utils.Constants;
 import com.workruta.android.Utils.CountingRequestBody;
 import com.workruta.android.Utils.Functions;
+import com.workruta.android.Utils.ImageGallery;
 import com.workruta.android.Utils.ImageLoader;
 import com.workruta.android.Utils.RandomString;
 import com.workruta.android.Utils.SharedPrefMngr;
@@ -70,7 +72,7 @@ import okhttp3.Response;
 
 import static com.workruta.android.Utils.Constants.www;
 
-public class ChangePhotoAct extends SharedCompatActivity {
+public class ChangePhotoAct extends SharedCompatActivity implements OnGalleryLoaded {
 
     Context context;
     @SuppressLint("StaticFieldLeak")
@@ -82,7 +84,7 @@ public class ChangePhotoAct extends SharedCompatActivity {
     RelativeLayout photoHolder;
     String myEmail, mySafeEmail;
     ArrayList<String> allMediaList;
-    String[] allPath, menuTexts;
+    String[] menuTexts;
     File[] allFiles;
     static File selectedFile, file;
     ImageAdaptor imageAdaptor;
@@ -93,6 +95,7 @@ public class ChangePhotoAct extends SharedCompatActivity {
     boolean uploading, processing, backEnabled;
     ImageLoader imageLoader;
     SharedPrefMngr sharedPrefMngr;
+    OnGalleryLoaded onGalleryLoaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +103,8 @@ public class ChangePhotoAct extends SharedCompatActivity {
         setContentView(R.layout.activity_change_photo);
         context = this;
         activity = this;
+        onGalleryLoaded = this;
+        sharedPrefMngr = new SharedPrefMngr(this);
 
         myEmail = sharedPrefMngr.getMyEmail();
         mySafeEmail = functions.safeEmail(myEmail);
@@ -158,7 +163,7 @@ public class ChangePhotoAct extends SharedCompatActivity {
         });
         next.setOnClickListener(v -> {
             if(!backEnabled)
-                startActivity(new Intent(context, DashboardAct.class));
+                startActivity(new Intent(context, FinishSetupAct.class));
         });
         gridView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
             if(gridView.getVisibility() == View.VISIBLE)
@@ -370,27 +375,10 @@ public class ChangePhotoAct extends SharedCompatActivity {
         new android.os.Handler().postDelayed(() -> {
             gridView.setVisibility(View.VISIBLE);
             done.setVisibility(View.VISIBLE);
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            int width = displayMetrics.widthPixels - 5;
-            int imgW = (width/3) - 10;
-            allMediaList = new ArrayList<>();
-            allPath = StorageUtils.getStorageDirectories(context);
-            for(String path: allPath){
-                File storage = new File(path);
-                loadDirectoryFiles(storage);
-            }
-
-            allFiles = new File[allMediaList.size()];
-            for (int x = 0; x < allMediaList.size(); x++){
-                String filePth = allMediaList.get(x);
-                allFiles[x] = new File(filePth);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Arrays.sort(allFiles, Comparator.comparingLong(File::lastModified).reversed());
-            }
-            imageAdaptor = new ImageAdaptor(allFiles, imgW);
-            gridView.setAdapter(imageAdaptor);
+            ImageGallery imageGallery = new ImageGallery(context);
+            imageGallery.setOnGalleryLoaded(onGalleryLoaded);
+            Thread thread = new Thread(imageGallery);
+            thread.start();
         }, 500);
     }
 
@@ -406,9 +394,9 @@ public class ChangePhotoAct extends SharedCompatActivity {
                         bColor = ((ColorDrawable) drawable).getColor();
                     int colorTo = ContextCompat.getColor(context, colors[i]), colorFrom = bColor;
                     runOnUiThread(() -> ObjectAnimator.ofObject(view, "backgroundColor", new ArgbEvaluator(), colorFrom , colorTo)
-                            .setDuration(400).start());
+                            .setDuration(300).start());
                 }
-            }, 0, 500);
+            }, 0, 300);
         }
         if (view instanceof ViewGroup) {
             for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++) {
@@ -418,43 +406,31 @@ public class ChangePhotoAct extends SharedCompatActivity {
         }
     }
 
-    public void loadDirectoryFiles(File directory){
-        boolean notForbidden = false;
-        String[] forbiddenPaths = new String[]{
-                "/Android/data",
-                "/Android/obb",
-                "/LOST.DIR",
-                "/.thumbnail"
-        };
-        File[] fileList = directory.listFiles();
-        if(fileList != null && fileList.length > 0){
-            for (File file : fileList) {
-                String filePath = file.getAbsolutePath();
-                if (file.isDirectory()) {
-                    for (String forbiddenPath : forbiddenPaths) {
-                        if (filePath.contains(forbiddenPath)) {
-                            notForbidden = true;
-                            break;
-                        }
-                    }
-                    if (!notForbidden)
-                        loadDirectoryFiles(file);
-                } else {
-                    String pthPar = file.getParent();
-
-                    String[] pthPars = Objects.requireNonNull(pthPar).split("/");
-                    if (!(pthPars[pthPars.length - 1].equals("LOST.DIR") || pthPars[pthPars.length - 1].equals(".thumbnails"))) {
-                        String name = file.getName().toLowerCase();
-                        for (String ext : Constants.allowedExtImg) {
-                            if (name.endsWith(ext)) {
-                                allMediaList.add(filePath);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+    @Override
+    public void onFinished(ArrayList<String> allMediaList) {
+        this.allMediaList = allMediaList;
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels - 5;
+        int imgW = (width/3) - 10;
+        allFiles = new File[allMediaList.size()];
+        for (int x = 0; x < allMediaList.size(); x++){
+            String filePth = allMediaList.get(x);
+            allFiles[x] = new File(filePth);
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Arrays.sort(allFiles, Comparator.comparingLong(File::lastModified).reversed());
+        }
+        if(imageAdaptor == null) {
+            imageAdaptor = new ImageAdaptor(allFiles, imgW);
+            runOnUiThread(() -> {
+                gridView.setAdapter(imageAdaptor);
+            });
+            return;
+        }
+        runOnUiThread(() -> {
+            imageAdaptor.resetList(allFiles);
+        });
     }
 
     private class ImageAdaptor extends BaseAdapter {
@@ -505,6 +481,11 @@ public class ChangePhotoAct extends SharedCompatActivity {
                 finalConvertView.setBackgroundResource(R.drawable.border_box_x);
             });
             return convertView;
+        }
+
+        public void resetList(File[] itemList){
+            this.itemList = itemList;
+            notifyDataSetChanged();
         }
     }
 

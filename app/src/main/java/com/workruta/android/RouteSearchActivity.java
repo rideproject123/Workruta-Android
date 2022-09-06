@@ -154,7 +154,7 @@ public class RouteSearchActivity extends SharedCompatActivity {
             String mon = monthsOnly[month];
             dateStr = d + " " + mon + " " + year;
         });
-        checkForPendingRoutes();
+        //checkForPendingRoutes();
         getRoutes();
 
         setupUI(mainView);
@@ -298,6 +298,7 @@ public class RouteSearchActivity extends SharedCompatActivity {
                         String responseString = Objects.requireNonNull(response.body()).string();
                         JSONObject jsonObject = new JSONObject(responseString);
                         boolean noError = jsonObject.getBoolean("noError");
+                        String dataStr = jsonObject.getString("dataStr");
                         if (noError) {
                             JSONObject dataObj = jsonObject.getJSONObject("dataStr");
                             String id = dataObj.getString("id");
@@ -310,7 +311,24 @@ public class RouteSearchActivity extends SharedCompatActivity {
                             sharedPrefMngr.addPendingRoute(String.valueOf(getMyId()), key, object);
                             loadingImageView.setVisibility(View.GONE);
                             errorTextView.setVisibility(View.VISIBLE);
-                            loaderLayout.setOnClickListener((v) -> retryCreatingRoute(routeLayout, request, key));
+                            poppedView = blackFade;
+                            if(blackFade.getChildCount() > 0)
+                                blackFade.removeAllViews();
+                            String btnTxt = getResources().getString(R.string.ok);
+                            LinearLayout alertLayout = (LinearLayout) getLayoutInflater().inflate(R.layout.alert_layout, null);
+                            TextView textView = alertLayout.findViewById(R.id.textView);
+                            Button negativeBtn = alertLayout.findViewById(R.id.negative);
+                            Button positiveBtn = alertLayout.findViewById(R.id.positive);
+                            negativeBtn.setVisibility(View.GONE);
+                            textView.setText(dataStr);
+                            positiveBtn.setText(btnTxt);
+                            positiveBtn.setOnClickListener((v1) -> {
+                                blackFade.setVisibility(View.GONE);
+                                poppedView = null;
+                            });
+                            blackFade.addView(alertLayout);
+                            blackFade.setVisibility(View.VISIBLE);
+                            //loaderLayout.setOnClickListener((v) -> retryCreatingRoute(routeLayout, request, key));
                         }
                     }
                 } catch (Exception e) {

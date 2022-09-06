@@ -131,7 +131,7 @@
             android:paddingStart="30dp"
             android:visibility="gone"
             android:textSize="15sp"
-            android:text="@string/connection_error_click_to_retry"
+            android:text="@string/errorText"
             tools:ignore="RtlSymmetry" />
 
     </LinearLayout>

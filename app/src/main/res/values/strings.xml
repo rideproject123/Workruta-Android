@@ -89,7 +89,7 @@
     <string name="address">Address</string>
     <string name="_1">+1</string>
     <string name="_508_712_3456">508 712 3456</string>
-    <string name="connection_error_click_to_retry">Connection Error. Click to retry</string>
+    <string name="errorText">Something went wrong</string>
     <string name="deleteRoute">Delete</string>
     <string name="retry">Retry</string>
     <string name="route_action_text"><![CDATA[Click <b>Retry</b> to create this route or <b>Delete</b> to delete it]]></string>

@@ -206,7 +206,7 @@ public class SignFormAct extends SharedCompatActivity {
                         userData.put("name", name);
                         createPaymentAccount(id, safeEmail);
                         database.setValue(userData);
-                        startActivity(new Intent(this, FinishSetupAct.class));
+                        startActivity(new Intent(this, ChangePhotoAct.class));
                         finish();
                     } else
                         Toast.makeText(this, dataStr, Toast.LENGTH_LONG).show();
@@ -217,7 +217,7 @@ public class SignFormAct extends SharedCompatActivity {
         }, 2000);
     }
 
-    private void createPaymentAccount(int userId, String safeEmail) throws StripeException {
+    private void createPaymentAccount(int userId, String safeEmail) {
         String accountKey = "acct_" + userId + "_" + safeEmail;
         Stripe.apiKey = Constants.stripeSKTestAPIKey;
         AccountLinkCreateParams params = AccountLinkCreateParams.builder()

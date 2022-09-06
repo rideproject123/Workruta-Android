@@ -1,7 +1,5 @@
 package com.workruta.android;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -18,7 +16,7 @@ public class FinishSetupAct extends SharedCompatActivity {
         _continue = findViewById(R.id._continue);
         _continue.setOnClickListener((v) ->{
             finish();
-            Intent intent = new Intent(this, ChangePhotoAct.class);
+            Intent intent = new Intent(this, DashboardAct.class);
             Bundle bundle = new Bundle();
             bundle.putBoolean("backEnabled", false);
             intent.putExtras(bundle);

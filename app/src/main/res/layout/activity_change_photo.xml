@@ -51,9 +51,9 @@
             android:id="@+id/photoHolder">
 
             <com.workruta.android.Views.RoundImageView
-                android:layout_width="295dp"
-                android:layout_height="295dp"
-                android:background="@drawable/prf_pic"
+                android:layout_width="297dp"
+                android:layout_height="297dp"
+                android:background="@drawable/default_photo"
                 android:id="@+id/imageView"
                 android:layout_centerInParent="true"/>
 
